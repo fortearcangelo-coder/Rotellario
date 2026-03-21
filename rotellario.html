@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0d0d0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Rotellario</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0f;
+    --bg2: #13110e;
+    --bg3: #1a1612;
+    --border: #2a2218;
+    --border2: #3a2e20;
+    --text: #e8e0d0;
+    --text2: #c8b890;
+    --muted: #7a6a50;
+    --muted2: #4a3e2a;
+    --gold: #fde68a;
+    --gold2: #c8940a;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Palatino Linotype', Palatino, Georgia, serif;
+    min-height: 100vh;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* HEADER */
+  header {
+    padding: 2rem 1.2rem 1.2rem;
+    border-bottom: 1px solid #2a2520;
+    background: linear-gradient(180deg, #13100d 0%, var(--bg) 100%);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  header h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #f5e6c8;
+    font-variant: small-caps;
+    text-shadow: 0 0 40px rgba(200,160,80,0.15);
+  }
+  header .subtitle {
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-family: monospace;
+    margin-top: 0.2rem;
+  }
+  header .count {
+    font-size: 0.72rem;
+    color: var(--muted2);
+    font-style: italic;
+    margin-top: 0.2rem;
+  }
+
+  /* CONTROLS */
+  .controls {
+    padding: 0.9rem 1.2rem;
+    border-bottom: 1px solid #1e1a16;
+    background: #0f0e0c;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .controls-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  input[type="text"], select {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.5rem 0.8rem;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  input[type="text"] { flex: 1; min-width: 0; }
+  select { color: var(--text2); }
+  .search-row { display: flex; gap: 0.5rem; }
+  .search-row input { flex: 1; }
+
+  /* BUTTONS */
+  .btn { border-radius: 6px; cursor: pointer; font-family: inherit; border: 1px solid; padding: 0.5rem 0.8rem; font-size: 0.82rem; }
+  .btn-gold { background: #2a1e0e; border-color: var(--gold2); color: var(--gold); }
+  .btn-ghost { background: var(--bg3); border-color: var(--border2); color: var(--muted); }
+  .btn-active { background: #3a2e20; border-color: var(--border2); color: #f5e6c8; }
+  .btn-danger { background: transparent; border-color: #b91c1c; color: #fca5a5; font-size: 0.75rem; padding: 0.3rem 0.6rem; }
+  .btn-sm { font-size: 0.75rem; padding: 0.3rem 0.6rem; background: transparent; border-color: var(--border); color: var(--muted); }
+
+  .view-toggle { display: flex; gap: 0.3rem; }
+  .view-toggle button { font-family: monospace; font-size: 0.75rem; padding: 0.45rem 0.7rem; }
+
+  /* RESULT COUNT */
+  .result-count { font-size: 0.72rem; color: var(--muted2); font-family: monospace; padding: 0.3rem 1.2rem 0; }
+
+  /* MAIN */
+  main { padding: 1rem 1.2rem 2rem; max-width: 900px; margin: 0 auto; }
+
+  /* DETAIL PANEL */
+  .detail-panel {
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1.2rem;
+    animation: fadeIn 0.15s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  .detail-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+  .detail-word { font-size: 1.5rem; font-weight: 700; color: #f5e6c8; font-style: italic; }
+  .detail-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+  .detail-def { margin-top: 0.6rem; color: var(--text2); font-style: italic; font-size: 0.9rem; }
+  .detail-def.empty { color: var(--muted2); }
+
+  /* CATEGORY BADGE */
+  .badge {
+    font-size: 0.65rem;
+    border-radius: 4px;
+    padding: 0.15rem 0.5rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid;
+    display: inline-block;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+
+  /* ADD / EDIT FORM */
+  .form-box {
+    background: #13100d;
+    border: 1px solid var(--gold2);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.2rem;
+  }
+  .form-box h3 { color: var(--gold); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.8rem; }
+  .form-fields { display: flex; flex-direction: column; gap: 0.5rem; }
+  .form-fields input, .form-fields select { width: 100%; }
+  .form-btns { display: flex; gap: 0.5rem; margin-top: 0.7rem; }
+
+  /* GRID VIEW */
+  .word-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.45rem;
+  }
+
+  /* ALPHA VIEW */
+  .alpha-section { margin-bottom: 1.5rem; }
+  .alpha-letter {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #3a2e20;
+    font-variant: small-caps;
+    border-bottom: 1px solid #1e1a16;
+    padding-bottom: 0.2rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.1em;
+  }
+  .alpha-words { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+  /* WORD CARD */
+  .word-card {
+    padding: 0.55rem 0.75rem;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .word-card:active { opacity: 0.8; }
+  .word-card.compact {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.65rem;
+  }
+  .word-card .wname {
+    font-style: italic;
+    color: #d4c8a8;
+    font-size: 0.88rem;
+    word-break: break-word;
+  }
+  .word-card .wcat {
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.8;
+  }
+
+  /* EMPTY */
+  .empty { text-align: center; color: var(--muted2); padding: 3rem 1rem; font-style: italic; }
+
+  /* FOOTER */
+  footer {
+    padding: 1rem;
+    border-top: 1px solid #1a1612;
+    text-align: center;
+    font-size: 0.65rem;
+    color: #3a2e20;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-family: monospace;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ROTELLARIO</h1>
+  <div class="subtitle">Dizionario Italiano — Rotellese</div>
+  <div class="count" id="totalCount"></div>
+</header>
+
+<div class="controls">
+  <div class="search-row">
+    <input type="text" id="searchInput" placeholder="Cerca un lemma…" oninput="render()">
+    <select id="catFilter" onchange="render()">
+      <option value="tutte">Tutte</option>
+      <option value="aggettivo">Aggettivo</option>
+      <option value="sostantivo">Sostantivo</option>
+      <option value="verbo">Verbo</option>
+      <option value="locuzione">Locuzione</option>
+      <option value="frase">Frase</option>
+    </select>
+  </div>
+  <div class="controls-row">
+    <div class="view-toggle">
+      <button class="btn btn-active" id="btnGrid" onclick="setView('grid')">⊞ griglia</button>
+      <button class="btn btn-ghost" id="btnAlpha" onclick="setView('alpha')">Α alfabeto</button>
+    </div>
+    <button class="btn btn-gold" onclick="openAdd()">+ Aggiungi lemma</button>
+  </div>
+</div>
+<div class="result-count" id="resultCount"></div>
+
+<main>
+  <div id="addForm" style="display:none"></div>
+  <div id="detailPanel"></div>
+  <div id="wordList"></div>
+</main>
+
+<footer>Rotellario — Lingua Rotellese · Prima Edizione</footer>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const STORAGE_KEY = "rotellario_words";
+
+const defaultWords = [
+  {id:1,word:"amebiformi",cat:"aggettivo",def:""},
+  {id:2,word:"asfaltante",cat:"aggettivo",def:""},
+  {id:3,word:"asciuttaggine",cat:"sostantivo",def:""},
+  {id:4,word:"apiforme",cat:"aggettivo",def:""},
+  {id:5,word:"approfittazione",cat:"sostantivo",def:""},
+  {id:6,word:"arrostoso",cat:"aggettivo",def:""},
+  {id:7,word:"atteggiamento stronzesco",cat:"locuzione",def:""},
+  {id:8,word:"atticoso",cat:"aggettivo",def:""},
+  {id:9,word:"alfeggiare",cat:"verbo",def:""},
+  {id:10,word:"bombiforme",cat:"aggettivo",def:""},
+  {id:11,word:"bottaioli",cat:"sostantivo",def:""},
+  {id:12,word:"bordadose",cat:"sostantivo",def:""},
+  {id:13,word:"burriforme",cat:"aggettivo",def:""},
+  {id:14,word:"blindamento",cat:"sostantivo",def:""},
+  {id:15,word:"bradipoforme",cat:"aggettivo",def:""},
+  {id:16,word:"barbonesimo",cat:"sostantivo",def:""},
+  {id:17,word:"braveggiare",cat:"verbo",def:""},
+  {id:18,word:"bradipesca",cat:"sostantivo",def:""},
+  {id:19,word:"bravitudine",cat:"sostantivo",def:""},
+  {id:20,word:"bambolosa (camminata)",cat:"locuzione",def:""},
+  {id:21,word:"befanoide",cat:"aggettivo",def:""},
+  {id:22,word:"bianchiformi (capelli)",cat:"locuzione",def:""},
+  {id:23,word:"barbona buzzorroide",cat:"locuzione",def:""},
+  {id:24,word:"bagongosi",cat:"sostantivo",def:""},
+  {id:25,word:"boom boommoso",cat:"locuzione",def:""},
+  {id:26,word:"caproide",cat:"aggettivo",def:""},
+  {id:27,word:"capriforme",cat:"aggettivo",def:""},
+  {id:28,word:"ciucciforme",cat:"aggettivo",def:""},
+  {id:29,word:"cogliocazzone",cat:"sostantivo",def:""},
+  {id:30,word:"cobriforme",cat:"aggettivo",def:""},
+  {id:31,word:"cucciolare",cat:"verbo",def:"farsi cucciolo"},
+  {id:32,word:"calpestabile",cat:"aggettivo",def:"donna calpestabile"},
+  {id:33,word:"capricciforme",cat:"aggettivo",def:""},
+  {id:34,word:"cazzeggiante",cat:"aggettivo",def:""},
+  {id:35,word:"coglioide/cazzoide pechinese",cat:"locuzione",def:""},
+  {id:36,word:"cagatrello",cat:"sostantivo",def:""},
+  {id:37,word:"celebro-handicappata",cat:"aggettivo",def:""},
+  {id:38,word:"chiocciforme",cat:"aggettivo",def:""},
+  {id:39,word:"castratiforme",cat:"aggettivo",def:""},
+  {id:40,word:"consorellite",cat:"sostantivo",def:""},
+  {id:41,word:"casalinghitudine",cat:"sostantivo",def:""},
+  {id:42,word:"cretinità",cat:"sostantivo",def:""},
+  {id:43,word:"defuffato",cat:"aggettivo",def:""},
+  {id:44,word:"dispantanare",cat:"verbo",def:""},
+  {id:45,word:"debeccare",cat:"verbo",def:""},
+  {id:46,word:"discasinare",cat:"verbo",def:""},
+  {id:47,word:"dolorare",cat:"verbo",def:""},
+  {id:48,word:"downesimo",cat:"sostantivo",def:""},
+  {id:49,word:"depressizzante",cat:"aggettivo",def:"atteggiamento di chi affetto da depressione continua a ricreare i programmi già tolti"},
+  {id:50,word:"ego-spappolato",cat:"aggettivo",def:""},
+  {id:51,word:"fuffato",cat:"aggettivo",def:""},
+  {id:52,word:"fuori-di-testaggine",cat:"sostantivo",def:""},
+  {id:53,word:"gurina",cat:"sostantivo",def:""},
+  {id:54,word:"grumo sigilloso",cat:"locuzione",def:""},
+  {id:55,word:"gioioizzano",cat:"aggettivo",def:""},
+  {id:56,word:"goderecciamento",cat:"sostantivo",def:""},
+  {id:57,word:"io-centrismo",cat:"sostantivo",def:""},
+  {id:58,word:"io-centrico",cat:"aggettivo",def:""},
+  {id:59,word:"imparanoiare",cat:"verbo",def:"suggerimento di Gabriele Prost"},
+  {id:60,word:"inculatio",cat:"sostantivo",def:"latinus grosus — rimanere nell'inculatio"},
+  {id:61,word:"iniforme",cat:"aggettivo",def:""},
+  {id:62,word:"lupeggianti",cat:"aggettivo",def:""},
+  {id:63,word:"limone-spremitrici",cat:"sostantivo",def:""},
+  {id:64,word:"letamoso",cat:"aggettivo",def:""},
+  {id:65,word:"lookale",cat:"sostantivo",def:""},
+  {id:66,word:"lamico",cat:"sostantivo",def:""},
+  {id:67,word:"luceresco",cat:"aggettivo",def:"di Lucera"},
+  {id:68,word:"merdiforme",cat:"aggettivo",def:""},
+  {id:69,word:"mammolettare",cat:"verbo",def:""},
+  {id:70,word:"mignottata",cat:"sostantivo",def:""},
+  {id:71,word:"mosciame",cat:"sostantivo",def:""},
+  {id:72,word:"mammolettizzati",cat:"aggettivo",def:""},
+  {id:73,word:"muliforme",cat:"aggettivo",def:""},
+  {id:74,word:"nietzschano",cat:"aggettivo",def:""},
+  {id:75,word:"orsite",cat:"sostantivo",def:""},
+  {id:76,word:"orpelliformi",cat:"aggettivo",def:""},
+  {id:77,word:"pippiforme",cat:"aggettivo",def:""},
+  {id:78,word:"primogenìte",cat:"sostantivo",def:""},
+  {id:79,word:"paltiformi",cat:"aggettivo",def:""},
+  {id:80,word:"peperinizzante",cat:"aggettivo",def:""},
+  {id:81,word:"pippeggiarsi",cat:"verbo",def:""},
+  {id:82,word:"porcoide lascivo",cat:"locuzione",def:""},
+  {id:83,word:"passera dedicato",cat:"locuzione",def:""},
+  {id:84,word:"paiettosa",cat:"aggettivo",def:""},
+  {id:85,word:"paperiforme",cat:"aggettivo",def:""},
+  {id:86,word:"pickupposi",cat:"aggettivo",def:""},
+  {id:87,word:"piselliferi",cat:"aggettivo",def:""},
+  {id:88,word:"picchiataggine mentale",cat:"locuzione",def:""},
+  {id:89,word:"qtriani",cat:"sostantivo",def:""},
+  {id:90,word:"rompicogliognoso",cat:"aggettivo",def:""},
+  {id:91,word:"sbubbonare",cat:"verbo",def:""},
+  {id:92,word:"sbubbonamento",cat:"sostantivo",def:""},
+  {id:93,word:"scorreggiante",cat:"aggettivo",def:""},
+  {id:94,word:"siculaggine",cat:"sostantivo",def:""},
+  {id:95,word:"sorellite",cat:"sostantivo",def:""},
+  {id:96,word:"sciattitudine",cat:"sostantivo",def:""},
+  {id:97,word:"sottostimazione",cat:"sostantivo",def:""},
+  {id:98,word:"schizzopatico",cat:"aggettivo",def:""},
+  {id:99,word:"specchettoso",cat:"aggettivo",def:""},
+  {id:100,word:"sbattimento svalutatorio",cat:"locuzione",def:""},
+  {id:101,word:"stronzando",cat:"verbo",def:""},
+  {id:102,word:"scheletroso",cat:"aggettivo",def:""},
+  {id:103,word:"spaghettiformi (capelli)",cat:"locuzione",def:""},
+  {id:104,word:"sgualdrappa",cat:"sostantivo",def:"parto di Nicoletta"},
+  {id:105,word:"sciattoneggiava",cat:"verbo",def:""},
+  {id:106,word:"terroriferiti",cat:"aggettivo",def:""},
+  {id:107,word:"talpoide",cat:"aggettivo",def:""},
+  {id:108,word:"toruto",cat:"aggettivo",def:""},
+  {id:109,word:"tombiforme",cat:"aggettivo",def:""},
+  {id:110,word:"troglodizzare",cat:"verbo",def:""},
+  {id:111,word:"tarliforme",cat:"aggettivo",def:""},
+  {id:112,word:"toppeggianti",cat:"aggettivo",def:""},
+  {id:113,word:"talebanesca",cat:"aggettivo",def:""},
+  {id:114,word:"virgultosa",cat:"aggettivo",def:""},
+  {id:115,word:"vittimeschi",cat:"aggettivo",def:""},
+  {id:116,word:"zerbinare",cat:"verbo",def:""},
+  {id:117,word:"zerbineggiare",cat:"verbo",def:""},
+  {id:118,word:"zottare",cat:"verbo",def:""},
+  {id:119,word:"zombiezzante",cat:"aggettivo",def:""},
+  {id:120,word:"zoccoliforme",cat:"aggettivo",def:""},
+  {id:121,word:"zoccolaggine",cat:"sostantivo",def:""},
+  {id:122,word:"errore di sbaglio",cat:"frase",def:""},
+  {id:123,word:"non so a che santo voltarmi",cat:"frase",def:""},
+  {id:124,word:"partito dello zombie continuo",cat:"frase",def:""},
+  {id:125,word:"pro-zombie ochiformi unitevi",cat:"frase",def:""},
+  {id:126,word:"bulimia spirituale",cat:"frase",def:""},
+  {id:127,word:"non puoi impedire al sole di splendere e alla luna di lunare",cat:"frase",def:""},
+];
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let words = loadWords();
+let selectedId = null;
+let currentView = "grid";
+let nextId = Math.max(...words.map(w => w.id)) + 1;
+let addingOpen = false;
+
+function loadWords() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [...defaultWords];
+  } catch { return [...defaultWords]; }
+}
+function saveWords() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(words)); } catch {}
+}
+
+// ─── COLORS ─────────────────────────────────────────────────────────────────
+const CAT_COLORS = {
+  aggettivo:  { bg:"#2a1f3d", text:"#c084fc", border:"#7c3aed" },
+  sostantivo: { bg:"#1a2e1a", text:"#86efac", border:"#16a34a" },
+  verbo:      { bg:"#1e2a3a", text:"#7dd3fc", border:"#0369a1" },
+  locuzione:  { bg:"#2e1a1a", text:"#fca5a5", border:"#b91c1c" },
+  frase:      { bg:"#2a2a1a", text:"#fde68a", border:"#b45309" },
+};
+function cc(cat) { return CAT_COLORS[cat] || CAT_COLORS.frase; }
+
+// ─── FILTERING ──────────────────────────────────────────────────────────────
+function getFiltered() {
+  const q = document.getElementById("searchInput").value.toLowerCase();
+  const cat = document.getElementById("catFilter").value;
+  return words.filter(w =>
+    (w.word.toLowerCase().includes(q) || w.def.toLowerCase().includes(q)) &&
+    (cat === "tutte" || w.cat === cat)
+  ).sort((a,b) => a.word.localeCompare(b.word, "it"));
+}
+
+// ─── VIEW ───────────────────────────────────────────────────────────────────
+function setView(v) {
+  currentView = v;
+  document.getElementById("btnGrid").className = "btn " + (v==="grid" ? "btn-active" : "btn-ghost");
+  document.getElementById("btnAlpha").className = "btn " + (v==="alpha" ? "btn-active" : "btn-ghost");
+  render();
+}
+
+// ─── RENDER ─────────────────────────────────────────────────────────────────
+function render() {
+  const filtered = getFiltered();
+  document.getElementById("totalCount").textContent = words.length + " lemmi catalogati";
+  document.getElementById("resultCount").textContent = filtered.length + " risultati";
+  renderDetail();
+  renderList(filtered);
+}
+
+function renderDetail() {
+  const panel = document.getElementById("detailPanel");
+  if (!selectedId) { panel.innerHTML = ""; return; }
+  const w = words.find(x => x.id === selectedId);
+  if (!w) { panel.innerHTML = ""; return; }
+  const c = cc(w.cat);
+  panel.innerHTML = `
+    <div class="detail-panel" style="background:${c.bg};border:1px solid ${c.border}">
+      <div class="detail-header">
+        <div>
+          <span class="detail-word">${esc(w.word)}</span>
+          <span class="badge" style="color:${c.text};border-color:${c.border}">${w.cat}</span>
+        </div>
+        <div class="detail-actions">
+          <button class="btn btn-sm" onclick="openEdit(${w.id})">✎</button>
+          <button class="btn btn-danger" onclick="deleteWord(${w.id})">✕</button>
+          <button class="btn btn-sm" onclick="closeDetail()">✕</button>
+        </div>
+      </div>
+      <div class="detail-def ${w.def ? '' : 'empty'}">
+        ${w.def ? esc(w.def) : 'Nessuna definizione ancora.'}
+      </div>
+    </div>`;
+}
+
+function renderList(filtered) {
+  const list = document.getElementById("wordList");
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty">Nessun lemma trovato.</div>';
+    return;
+  }
+  if (currentView === "grid") {
+    list.innerHTML = `<div class="word-grid">${filtered.map(w => wordCardHTML(w, false)).join("")}</div>`;
+  } else {
+    const grouped = {};
+    filtered.forEach(w => {
+      const l = w.word[0].toUpperCase();
+      if (!grouped[l]) grouped[l] = [];
+      grouped[l].push(w);
+    });
+    list.innerHTML = Object.entries(grouped)
+      .sort(([a],[b]) => a.localeCompare(b))
+      .map(([letter, ws]) => `
+        <div class="alpha-section">
+          <div class="alpha-letter">${letter}</div>
+          <div class="alpha-words">${ws.map(w => wordCardHTML(w, true)).join("")}</div>
+        </div>`).join("");
+  }
+}
+
+function wordCardHTML(w, compact) {
+  const c = cc(w.cat);
+  const sel = selectedId === w.id;
+  return `
+    <div class="word-card ${compact ? 'compact' : ''}"
+      style="border-color:${sel ? c.border : '#2a2218'};background:${sel ? c.bg : '#13110e'}"
+      onclick="selectWord(${w.id})"
+      onmouseenter="this.style.borderColor='${c.border}'"
+      onmouseleave="this.style.borderColor='${sel ? c.border : '#2a2218'}'">
+      <span class="wname">${esc(w.word)}</span>
+      <span class="wcat" style="color:${c.text}">${w.cat}</span>
+    </div>`;
+}
+
+// ─── ADD FORM ────────────────────────────────────────────────────────────────
+function openAdd() {
+  addingOpen = true;
+  document.getElementById("addForm").style.display = "block";
+  document.getElementById("addForm").innerHTML = `
+    <div class="form-box">
+      <h3>Nuovo lemma</h3>
+      <div class="form-fields">
+        <input type="text" id="newWord" placeholder="Parola *" />
+        <select id="newCat">
+          <option value="aggettivo">Aggettivo</option>
+          <option value="sostantivo">Sostantivo</option>
+          <option value="verbo">Verbo</option>
+          <option value="locuzione">Locuzione</option>
+          <option value="frase">Frase</option>
+        </select>
+        <input type="text" id="newDef" placeholder="Definizione (opzionale)" />
+      </div>
+      <div class="form-btns">
+        <button class="btn btn-gold" onclick="confirmAdd()">Aggiungi</button>
+        <button class="btn btn-ghost" onclick="closeAdd()">Annulla</button>
+      </div>
+    </div>`;
+}
+
+function confirmAdd() {
+  const word = document.getElementById("newWord").value.trim();
+  if (!word) return;
+  const cat = document.getElementById("newCat").value;
+  const def = document.getElementById("newDef").value.trim();
+  words.push({ id: nextId++, word, cat, def });
+  saveWords();
+  closeAdd();
+  render();
+}
+
+function closeAdd() {
+  document.getElementById("addForm").style.display = "none";
+  document.getElementById("addForm").innerHTML = "";
+}
+
+// ─── EDIT FORM ───────────────────────────────────────────────────────────────
+function openEdit(id) {
+  const w = words.find(x => x.id === id);
+  if (!w) return;
+  const panel = document.getElementById("detailPanel");
+  const c = cc(w.cat);
+  panel.innerHTML = `
+    <div class="form-box" style="border-color:${c.border}">
+      <h3>Modifica lemma</h3>
+      <div class="form-fields">
+        <input type="text" id="editWord" value="${esc(w.word)}" />
+        <select id="editCat">
+          ${["aggettivo","sostantivo","verbo","locuzione","frase"].map(c =>
+            `<option value="${c}" ${w.cat===c?"selected":""}>${c}</option>`
+          ).join("")}
+        </select>
+        <input type="text" id="editDef" value="${esc(w.def)}" placeholder="Definizione" />
+      </div>
+      <div class="form-btns">
+        <button class="btn btn-gold" onclick="confirmEdit(${id})">Salva</button>
+        <button class="btn btn-ghost" onclick="render()">Annulla</button>
+      </div>
+    </div>`;
+}
+
+function confirmEdit(id) {
+  const idx = words.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  words[idx].word = document.getElementById("editWord").value.trim();
+  words[idx].cat  = document.getElementById("editCat").value;
+  words[idx].def  = document.getElementById("editDef").value.trim();
+  saveWords();
+  render();
+}
+
+// ─── ACTIONS ─────────────────────────────────────────────────────────────────
+function selectWord(id) {
+  selectedId = selectedId === id ? null : id;
+  render();
+}
+function closeDetail() { selectedId = null; render(); }
+function deleteWord(id) {
+  if (!confirm("Eliminare questo lemma?")) return;
+  words = words.filter(w => w.id !== id);
+  selectedId = null;
+  saveWords();
+  render();
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
