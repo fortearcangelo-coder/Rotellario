@@ -327,9 +327,69 @@ footer::before { content: '◆ ◇ ◆'; display: block; color: var(--gold); fon
 
 /* gold corner */
 .gold-corner { position: fixed; bottom: 0; right: 0; width: 90px; height: 90px; pointer-events: none; }
+
+/* ── PASSWORD MODAL ── */
+.pw-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; padding: 1.2rem;
+}
+.pw-modal {
+  background: var(--surface); border: 1px solid var(--gold2);
+  border-radius: 12px; padding: 1.6rem 1.4rem; max-width: 360px; width: 100%;
+  position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px var(--goldfaint);
+}
+.pw-modal::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  border-radius: 12px 12px 0 0;
+  background: linear-gradient(90deg, var(--gold), var(--gold2), var(--gold3), var(--gold2), var(--gold));
+}
+.pw-modal h2 {
+  font-family: 'Cormorant Garamond', serif; color: var(--gold2);
+  font-size: 1.4rem; font-weight: 600; margin-bottom: 0.3rem; padding-top: 0.2rem;
+}
+.pw-modal p { font-size: 0.82rem; color: var(--muted); line-height: 1.6; margin-bottom: 1rem; }
+.pw-modal input {
+  width: 100%; margin-bottom: 0.4rem;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 7px; color: var(--text); font-family: 'Outfit', sans-serif;
+  font-size: 1rem; padding: 0.55rem 0.85rem; outline: none; letter-spacing: 0.08em;
+}
+.pw-modal input:focus { border-color: var(--sap2); }
+.pw-error { color: #ef4444; font-size: 0.78rem; min-height: 1.1rem; margin-bottom: 0.5rem; font-family: 'Outfit', sans-serif; }
+.pw-modal-btns { display: flex; gap: 0.5rem; }
+.pw-hint { font-size: 0.7rem; color: var(--muted2); margin-top: 0.7rem; font-style: italic; }
+
+/* ── AUTH BADGE ── */
+.auth-badge {
+  display: flex; align-items: center; gap: 0.35rem;
+  font-family: 'Outfit', sans-serif; font-size: 0.72rem;
+  padding: 0.28rem 0.6rem; border-radius: 20px; border: 1px solid;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.auth-badge.logged-in  { color: var(--gold); border-color: var(--gold); background: var(--goldfaint); }
+.auth-badge.logged-out { color: var(--muted); border-color: var(--border); background: transparent; }
+.auth-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.auth-badge.logged-in  .auth-dot { background: var(--gold2); box-shadow: 0 0 6px var(--gold2); }
+.auth-badge.logged-out .auth-dot { background: var(--muted2); }
 </style>
 </head>
 <body>
+
+<!-- PASSWORD MODAL -->
+<div class="pw-overlay" id="pwOverlay" style="display:none">
+  <div class="pw-modal">
+    <h2>✦ Accesso Editor</h2>
+    <p>Inserisci la password per modificare il Rotellario.<br>In sola lettura non serve nulla.</p>
+    <input type="password" id="pwInput" placeholder="Password…" onkeydown="if(event.key==='Enter')checkPw()"/>
+    <div class="pw-error" id="pwError"></div>
+    <div class="pw-modal-btns">
+      <button class="btn btn-gold" onclick="checkPw()">Entra</button>
+      <button class="btn btn-ghost" onclick="closePwModal()">Solo lettura</button>
+    </div>
+    <p class="pw-hint">Chi non ha la password può comunque consultare tutte le parole.</p>
+  </div>
+</div>
 
 <svg class="gold-corner" viewBox="0 0 90 90" fill="none">
   <defs><radialGradient id="cg" cx="100%" cy="100%"><stop offset="0%" stop-color="#e0b01a" stop-opacity="0.30"/><stop offset="100%" stop-color="#e0b01a" stop-opacity="0"/></radialGradient></defs>
@@ -343,7 +403,7 @@ footer::before { content: '◆ ◇ ◆'; display: block; color: var(--gold); fon
       <h1>ROTELLARIO</h1>
       <div class="header-sub">Dizionario · Lingua Rotellese</div>
       <div class="header-count" id="totalCount"></div>
-      <div class="header-badge">QTR Academy · Lingua Ufficiale</div>
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap"><div class="header-badge">QTR Academy · Lingua Ufficiale</div><div class="auth-badge logged-out" id="authBadge" onclick="handleAuthClick()"><span class="auth-dot"></span><span id="authLabel">Solo lettura</span></div></div>
     </div>
     <svg class="compass" width="58" height="58" viewBox="0 0 58 58" fill="none">
       <circle cx="29" cy="29" r="26" stroke="#e0b01a" stroke-width="0.7" stroke-dasharray="2 3"/>
@@ -378,7 +438,7 @@ footer::before { content: '◆ ◇ ◆'; display: block; color: var(--gold); fon
       <button class="btn btn-active" id="btnGrid" onclick="setView('grid')">⊞ Griglia</button>
       <button class="btn btn-ghost" id="btnAlpha" onclick="setView('alpha')">Α Alfa</button>
     </div>
-    <button class="btn btn-gold" onclick="openAdd()">＋ Aggiungi</button>
+    <button class="btn btn-gold" id="btnAdd" onclick="openAdd()">＋ Aggiungi</button>
     <div class="font-controls">
       <span>Aa</span>
       <button class="font-btn" onclick="changeFontSize(-1)" title="Diminuisci">−</button>
@@ -398,6 +458,74 @@ footer::before { content: '◆ ◇ ◆'; display: block; color: var(--gold); fon
 <script>
 const STORAGE_KEY = "rotellario_v4";
 const FS_KEY = "rotellario_fs";
+const AUTH_KEY = "rotellario_auth";
+
+// ── PASSWORD ─────────────────────────────────────────────────────────────────
+// Hash SHA-256 della password. Quella di default è "rotellese"
+// Per cambiarla vai su: https://emn178.github.io/online-tools/sha256.html
+const PW_HASH = "54ccdf2882d05c45ef6b494297ef0f0e90752bd0f567cdd4617f97a5b26c5ac8";
+
+let isEditor = false;
+
+async function hashString(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+async function checkPw() {
+  const val = document.getElementById("pwInput").value;
+  const h = await hashString(val);
+  if (h === PW_HASH) {
+    isEditor = true;
+    sessionStorage.setItem(AUTH_KEY, "1");
+    closePwModal();
+    updateAuthBadge();
+    render();
+  } else {
+    document.getElementById("pwError").textContent = "Password errata. Riprova.";
+    document.getElementById("pwInput").value = "";
+    document.getElementById("pwInput").focus();
+  }
+}
+
+function openPwModal() {
+  document.getElementById("pwOverlay").style.display = "flex";
+  setTimeout(() => document.getElementById("pwInput").focus(), 80);
+}
+function closePwModal() {
+  document.getElementById("pwOverlay").style.display = "none";
+  document.getElementById("pwError").textContent = "";
+  document.getElementById("pwInput").value = "";
+}
+
+function handleAuthClick() {
+  if (isEditor) {
+    isEditor = false;
+    sessionStorage.removeItem(AUTH_KEY);
+    updateAuthBadge();
+    render();
+  } else {
+    openPwModal();
+  }
+}
+
+function updateAuthBadge() {
+  const badge = document.getElementById("authBadge");
+  const label = document.getElementById("authLabel");
+  const btnAdd = document.getElementById("btnAdd");
+  if (!badge) return;
+  if (isEditor) {
+    badge.className = "auth-badge logged-in";
+    label.textContent = "Editor ✦";
+    if (btnAdd) btnAdd.style.display = "";
+  } else {
+    badge.className = "auth-badge logged-out";
+    label.textContent = "Solo lettura";
+    if (btnAdd) btnAdd.style.display = "none";
+  }
+}
+
+if (sessionStorage.getItem(AUTH_KEY) === "1") { isEditor = true; }
 
 // ── FONT SIZE ────────────────────────────────────────────────────────────────
 let fontSize = parseFloat(localStorage.getItem(FS_KEY) || "16");
@@ -588,6 +716,7 @@ function render(){
   const f=getFiltered();
   document.getElementById("totalCount").textContent=words.length+" lemmi catalogati";
   document.getElementById("resultCount").textContent=f.length+" risultati";
+  updateAuthBadge();
   renderList(f);
 }
 
@@ -602,10 +731,10 @@ function inlinePanel(w){
     <div class="def-text ${w.def?'':'empty'}" style="${w.def?'color:'+c.text:''}">
       ${w.def?esc(w.def):'Nessuna definizione ancora.'}
     </div>
-    <div class="def-actions">
+    ${isEditor ? `<div class="def-actions">
       <button class="btn btn-sm" onclick="openEdit(${w.id});event.stopPropagation()">✎ Modifica</button>
       <button class="btn btn-danger" onclick="deleteWord(${w.id});event.stopPropagation()">✕</button>
-    </div>
+    </div>` : ""}
   </div>`;
 }
 
@@ -655,6 +784,7 @@ function cardHTML(w,compact,sel,c){
 
 // ── ADD ───────────────────────────────────────────────────────────────────────
 function openAdd(){
+  if(!isEditor){openPwModal();return;}
   document.getElementById("addForm").style.display="block";
   document.getElementById("addForm").innerHTML=`<div class="form-box"><h3>✦ Nuovo lemma</h3>
     <div class="form-fields">
@@ -677,6 +807,7 @@ function closeAdd(){document.getElementById("addForm").style.display="none";docu
 
 // ── EDIT ──────────────────────────────────────────────────────────────────────
 function openEdit(id){
+  if(!isEditor){openPwModal();return;}
   const w=words.find(x=>x.id===id);if(!w)return;
   const c=cc(w.cat);
   // replace inline panel with edit form in place
@@ -720,6 +851,7 @@ function selectWord(id){
   }
 }
 function deleteWord(id){
+  if(!isEditor){openPwModal();return;}
   if(!confirm("Eliminare questo lemma?"))return;
   words=words.filter(w=>w.id!==id);selectedId=null;save();render();
 }
