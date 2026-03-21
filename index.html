@@ -527,6 +527,107 @@ function updateAuthBadge() {
 
 if (sessionStorage.getItem(AUTH_KEY) === "1") { isEditor = true; }
 
+// ── GIST CONFIG ──────────────────────────────────────────────────────────────
+const GIST_ID = "fc8b66d5137bb0ef5187b555a65181ad";
+const GIST_FILE = "rotellario.json";
+const GIST_TOKEN_KEY = "rotellario_gist_token";
+
+function getGistToken() { return localStorage.getItem(GIST_TOKEN_KEY) || ""; }
+function setGistToken(t) { localStorage.setItem(GIST_TOKEN_KEY, t); }
+
+async function loadFromGist() {
+  try {
+    const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+      headers: { "Accept": "application/vnd.github+json" }
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    const raw = data.files[GIST_FILE]?.content;
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      words = parsed;
+      nextId = Math.max(...words.map(w => w.id), 0) + 1;
+      return true;
+    }
+    return false;
+  } catch(e) { console.error("Gist load error:", e); return false; }
+}
+
+async function saveToGist() {
+  const token = getGistToken();
+  if (!token) { showGistTokenModal(); return false; }
+  try {
+    const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+      method: "PATCH",
+      headers: {
+        "Accept": "application/vnd.github+json",
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        files: { [GIST_FILE]: { content: JSON.stringify(words, null, 2) } }
+      })
+    });
+    if (res.status === 401) { showGistTokenModal(); return false; }
+    return res.ok;
+  } catch(e) { console.error("Gist save error:", e); return false; }
+}
+
+// Modal per inserire il token Gist (solo per editor, una volta sola)
+function showGistTokenModal() {
+  let modal = document.getElementById("gistTokenModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "gistTokenModal";
+    modal.className = "pw-overlay";
+    modal.innerHTML = `<div class="pw-modal">
+      <h2>✦ Token GitHub</h2>
+      <p>Per sincronizzare le modifiche hai bisogno del tuo <strong>Personal Access Token</strong> GitHub con permesso <code>gist</code>.<br><br>
+      Viene salvato solo sul tuo dispositivo e non appare mai nel codice pubblico.</p>
+      <input type="password" id="gistTokenInput" placeholder="ghp_..." />
+      <div class="pw-error" id="gistTokenError"></div>
+      <div class="pw-modal-btns">
+        <button class="btn btn-gold" onclick="saveGistToken()">Salva token</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('gistTokenModal').style.display='none'">Annulla</button>
+      </div>
+      <p class="pw-hint">Il token lo hai creato su GitHub → Settings → Developer settings → Personal access tokens.</p>
+    </div>`;
+    document.body.appendChild(modal);
+  }
+  modal.style.display = "flex";
+  setTimeout(() => document.getElementById("gistTokenInput")?.focus(), 80);
+}
+
+async function saveGistToken() {
+  const t = document.getElementById("gistTokenInput")?.value?.trim();
+  if (!t || !t.startsWith("ghp_")) {
+    document.getElementById("gistTokenError").textContent = "Token non valido. Deve iniziare con ghp_";
+    return;
+  }
+  setGistToken(t);
+  document.getElementById("gistTokenModal").style.display = "none";
+  // Ritenta il salvataggio
+  const ok = await saveToGist();
+  if (ok) showToast("✓ Sincronizzato con Gist");
+  else showToast("⚠ Errore durante il salvataggio");
+}
+
+function showToast(msg) {
+  let t = document.getElementById("toast");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "toast";
+    t.style.cssText = "position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--sap);color:#fff;padding:0.6rem 1.2rem;border-radius:20px;font-family:Outfit,sans-serif;font-size:0.82rem;z-index:200;box-shadow:0 4px 20px rgba(0,0,0,0.3);transition:opacity 0.3s;border:1px solid var(--gold);white-space:nowrap";
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = "1";
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.style.opacity = "0", 2800);
+}
+
+
 // ── FONT SIZE ────────────────────────────────────────────────────────────────
 let fontSize = parseFloat(localStorage.getItem(FS_KEY) || "16");
 function applyFontSize() {
@@ -696,7 +797,10 @@ function cc(cat){return(CAT[cat]||CAT.frase)[isDark()?'dark':'light'];}
 let words=(()=>{try{const s=localStorage.getItem(STORAGE_KEY);return s?JSON.parse(s):[...defaultWords];}catch{return[...defaultWords];}})();
 let selectedId=null, currentView="grid";
 let nextId=Math.max(...words.map(w=>w.id),0)+1;
-function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(words));}catch{}}
+function save(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(words));}catch{}
+  saveToGist().then(ok => { if(ok) showToast("✓ Salvato e sincronizzato"); });
+}
 
 function getFiltered(){
   const q=document.getElementById("searchInput").value.toLowerCase().trim();
@@ -858,7 +962,17 @@ function deleteWord(id){
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 
 if(window.matchMedia)window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',render);
-render();
+
+// Avvio: carica da Gist se disponibile, altrimenti usa localStorage/default
+(async () => {
+  const fromGist = await loadFromGist();
+  if (fromGist) {
+    // Aggiorna anche localStorage con i dati freschi dal Gist
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(words)); } catch {}
+  }
+  updateAuthBadge();
+  render();
+})();
 </script>
 </body>
 </html>
