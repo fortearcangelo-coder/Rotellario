@@ -113,6 +113,34 @@ Su Linux servono le dipendenze di sistema (webkit2gtk, ecc.): vedi
 
 ---
 
+## 🚀 Come installarla sul telefono (per pochi utenti, senza store)
+
+Non serve pubblicare su Play Store / App Store per usarla su 2-3 telefoni.
+
+### Android (si fa anche da Windows)
+1. Completa i passi della sezione **Android** qui sopra (`android:init`).
+2. Poi hai due modi:
+   - **Col cavo USB:** attiva *Debug USB* sul telefono, collegalo e lancia
+     `npm run android:dev` → l'app si installa e parte da sola.
+   - **Con un file da condividere:** lancia `npm run android:build`. Ottieni un
+     `.apk` in `src-tauri/gen/android/app/build/outputs/apk/…`. Invialo (WhatsApp,
+     email, o mettilo sul tuo dominio): chi lo riceve lo apre e lo installa,
+     accettando "installa da origini sconosciute".
+3. Per il semplice sideload va bene l'**APK di debug**. Per un APK *release*
+   firmato serve un keystore: vedi la
+   [guida Tauri alla firma Android](https://v2.tauri.app/distribute/sign/android/).
+
+### iPhone (richiede un Mac)
+Apple **non consente** di compilare per iOS da Windows/Linux: serve **macOS + Xcode**.
+- **Con un Mac:** `npm run ios:init`, apri `src-tauri/gen/apple/` in Xcode, collega
+  l'iPhone e firma col tuo Apple ID. Con Apple ID gratuito l'app **scade dopo 7 giorni**
+  (va reinstallata); con l'account Apple Developer (99 €/anno) dura un anno e puoi usare
+  TestFlight per distribuirla fino a 100 persone.
+- **Senza un Mac:** puoi usare un **Mac in cloud** (es. MacinCloud) oppure un servizio
+  **CI con runner macOS** (es. Codemagic, piano gratuito) che compila l'app iOS al posto tuo.
+
+---
+
 ## 💾 Dati e privacy
 
 - I lemmi sono salvati nel `localStorage` della webview, **dentro la sandbox dell'app**: restano sul telefono e sopravvivono alle riaperture.
