@@ -1,0 +1,21 @@
+{
+  "name": "rotellario",
+  "version": "1.0.0",
+  "description": "Rotellario — Dizionario della Lingua Rotellese. App locale per iOS e Android (Tauri 2).",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "android:init": "tauri android init",
+    "android:dev": "tauri android dev",
+    "android:build": "tauri android build",
+    "ios:init": "tauri ios init",
+    "ios:dev": "tauri ios dev",
+    "ios:build": "tauri ios build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.0"
+  }
+}

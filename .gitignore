@@ -1,0 +1,13 @@
+# Dipendenze Node
+node_modules/
+
+# Build Rust / Tauri
+src-tauri/target/
+
+# Progetti nativi generati da `tauri android/ios init`
+# (rigenerabili con un comando; non vanno versionati)
+src-tauri/gen/
+
+# File di sistema
+.DS_Store
+Thumbs.db
